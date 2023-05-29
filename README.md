@@ -1,5 +1,8 @@
 # myzsh
-my personal zsh setup
+my personal zsh setup.
+
+Installs Oh My ZSH, PL10k as well as other useful CLI things like fonts and brew packages.
+Oh and some plugins.
 
 1.
 ```
