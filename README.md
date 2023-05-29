@@ -1,2 +1,2 @@
 # myzsh
-my person zsh setup
+my personal zsh setup
