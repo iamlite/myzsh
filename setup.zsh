@@ -21,10 +21,13 @@ brew install bat fzf jump mpdecimal pcre six zoxide ca-certificates go libgit2 n
 # Install brew casks
 brew install --cask font-fira-code font-hack-nerd-font
 
+# Backup existing configuration files if they exist
+[[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
+[[ -f ~/.p10k.zsh ]] && cp ~/.p10k.zsh ~/.p10k.zsh.bak
+
 # Copy configuration files
 cp .zshrc ~/
 cp .p10k.zsh ~/
 
 # Source the new .zshrc file
 source ~/.zshrc
-
