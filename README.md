@@ -26,7 +26,12 @@ git clone https://github.com/iamlite/myzsh
 cd myzsh
 ```
 
-3. Run the setup script:
+3. Permissions
+```
+chmod +x setup.zsh
+```
+
+4. Run the setup script:
 
 ```zsh
 ./setup.zsh
