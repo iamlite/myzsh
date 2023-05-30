@@ -1,4 +1,4 @@
-#LITE ZSHRC DUMMY SETUP
+LITE ZSHRC DUMMY SETUP
 
 My personal zsh setup.
 Made for macOS. Will need some tweaking for Linux.
