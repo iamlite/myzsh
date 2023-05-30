@@ -69,6 +69,7 @@ PROMPT='%F{cyan}%n%f@%F{green}%m%f:%F{yellow}%~%f ${vcs_info_msg_0_}'
 
 # Initialize plugins
 eval "$(zoxide init zsh)" # zoxide
+export PATH="$HOME/.local/bin:$PATH"
 
 # ============================== #
 #      GENERAL ALIASES           #
