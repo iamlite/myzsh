@@ -18,7 +18,7 @@ fi
 # =============================== #
 
 # Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh" 
+export ZSH="$HOME/.oh-my-zsh"
 
 # Use powerlevel10k theme
 ZSH_THEME="powerlevel10k/powerlevel10k" # Use powerlevel10k theme
@@ -28,10 +28,10 @@ ZSH_THEME="powerlevel10k/powerlevel10k" # Use powerlevel10k theme
 # ====================================== #
 
 # Allow hyphens in autocomplete
-HYPHEN_INSENSITIVE="true" 
+HYPHEN_INSENSITIVE="true"
 
 # just remind me to update when it's time
-zstyle ':omz:update' mode reminder  
+zstyle ':omz:update' mode reminder
 
 # Uncomment the following line to enable command auto-correction.
 # ENABLE_CORRECTION="true"
@@ -43,9 +43,19 @@ COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 #     PLUGIN CONFIGURATION       #
 # ============================== #
 
-
 # list of oh-my-zsh plugins
-plugins=( git zsh-syntax-highlighting zsh-autosuggestions web-search alias-finder aliases command-not-found copypath copyfile macos )
+plugins=(
+  git
+  zsh-syntax-highlighting
+  zsh-autosuggestions
+  web-search
+  alias-finder
+  aliases
+  command-not-found
+  copypath
+  copyfile
+  macos
+)
 
 # source oh-my-zsh
 source $ZSH/oh-my-zsh.sh
@@ -53,7 +63,6 @@ source $ZSH/oh-my-zsh.sh
 # ============================== #
 #     PROMPT CONFIGURATION       #
 # ============================== #
-
 
 autoload -Uz vcs_info
 precmd() {
@@ -64,12 +73,19 @@ setopt prompt_subst
 PROMPT='%F{cyan}%n%f@%F{green}%m%f:%F{yellow}%~%f ${vcs_info_msg_0_}'
 
 # ============================== #
-#     PLUGIN INITIALIZATION      #
-# ============================== # 
+#         DUMB SHIT              #
+# ============================== #
+alias bro='echo you got it bro && sudo $(fc -ln -1)' # Run last command with sudo
+alias cat='bat --paging=never --tabs=4'
+alias vim='nano'
 
-# Initialize plugins
-eval "$(zoxide init zsh)" # zoxide
-export PATH="$HOME/.local/bin:$PATH"
+# ============================== #
+#    APP SPECIFIC ALIASES        #
+# ============================== #
+
+alias ls='exa -labh --group-directories-first --no-permissions --no-filesize --color always --sort=type' # better ls
+alias code='open -a "Visual Studio Code"' # Open VS Code from anywhere
+alias dockerps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"' # List running docker containers
 
 # ============================== #
 #      GENERAL ALIASES           #
@@ -92,29 +108,9 @@ alias myips='ipconfig getifaddr en0 && ipconfig getifaddr en1'  # Get local IP a
 alias pingg='ping google.com'  # Check internet connection
 
 # ============================== #
-#    APP SPECIFIC ALIASES        #
-# ============================== #
-
-alias ls='exa -labh --group-directories-first --no-permissions --no-filesize --color always --sort=type' # better ls
-alias code='open -a "Visual Studio Code"' # Open VS Code from anywhere
-alias dockerps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"' # List running docker containers
-
-# ============================== #
-#         DUMB SHIT              #
-# ============================== #
-alias bro='echo you got it bro && sudo $(fc -ln -1)' # Run last command with sudo
-alias cat='bat --paging=never --tabs=4'
-alias vim='nano'
-
-# ============================== #
-#        P10K SOURCE             #
-# ============================== #
-
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# ============================== #
 #         FUNCTIONS              #
 # ============================== #
+
 function vnc() {
     if [[ -n "$SSH_CLIENT" ]]; then
         ip=$(echo $SSH_CLIENT | awk '{ print $1}')
@@ -123,3 +119,14 @@ function vnc() {
         echo "Not connected via SSH"
     fi
 }
+
+# ============================== #
+#     PLUGIN INITIALIZATION      #
+# ============================== #
+
+# Initialize plugins
+export PATH="$HOME/.local/bin:$PATH"
+eval "$(zoxide init zsh)" # zoxide
+
+#idk
+echo "LETS GO"
