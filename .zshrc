@@ -131,4 +131,5 @@ eval "$(zoxide init zsh)" # zoxide
 # ============================== #
 #              IDK               #
 # ============================== #
+echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >>! ~/.zshrc
 echo "LETS GO"
