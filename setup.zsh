@@ -19,7 +19,16 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 
 # Install packages
-sudo apt install -y bat fzf libpcre3-dev ca-certificates golang libgit2-dev sqlite3 zsh exa libssh2-1-dev libncurses5-dev thefuck fd-find htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf
+sudo apt-get install -y --no-install-recommends bat fzf libpcre3-dev ca-certificates golang libgit2-dev sqlite3 howdoi zsh libssh2-1-dev libncurses5-dev thefuck fd-find htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf || true
+
+# Add unstable packages for EXA
+echo "deb http://deb.debian.org/debian unstable main" | sudo tee /etc/apt/sources.list.d/unstable.list
+
+# Update package list
+sudo apt-get update
+
+# Install EXA
+sudo apt-get install -y -t unstable exa
 
 # Install zoxide
 curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin

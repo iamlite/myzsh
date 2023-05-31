@@ -73,7 +73,7 @@ setopt prompt_subst
 PROMPT='%F{cyan}%n%f@%F{green}%m%f:%F{yellow}%~%f ${vcs_info_msg_0_}'
 
 # ============================== #
-#         DUMB SHIT              #
+#           DUMB SHIT            #
 # ============================== #
 alias bro='echo you got it bro && sudo $(fc -ln -1)' # Run last command with sudo
 alias cat='bat --paging=never --tabs=4'
@@ -88,7 +88,7 @@ alias code='open -a "Visual Studio Code"' # Open VS Code from anywhere
 alias dockerps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"' # List running docker containers
 
 # ============================== #
-#      GENERAL ALIASES           #
+#        GENERAL ALIASES         #
 # ============================== #
 
 alias reload='source ~/.zshrc' # Reload .zshrc file
@@ -108,7 +108,7 @@ alias myips='ipconfig getifaddr en0 && ipconfig getifaddr en1'  # Get local IP a
 alias pingg='ping google.com'  # Check internet connection
 
 # ============================== #
-#         FUNCTIONS              #
+#           FUNCTIONS            #
 # ============================== #
 
 function vnc() {
@@ -128,5 +128,7 @@ function vnc() {
 export PATH="$HOME/.local/bin:$PATH"
 eval "$(zoxide init zsh)" # zoxide
 
-#idk
+# ============================== #
+#              IDK               #
+# ============================== #
 echo "LETS GO"
