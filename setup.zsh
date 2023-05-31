@@ -19,12 +19,10 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 
 # Install packages
-sudo apt-get install -y --no-install-recommends bat fzf libpcre3-dev ca-certificates golang libgit2-dev sqlite3 howdoi zsh libssh2-1-dev libncurses5-dev thefuck fd-find htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf || true
+sudo apt-get install -y --no-install-recommends bat fzf libpcre3-dev ca-certificates sqlite3 howdoi zsh libssh2-1-dev libncurses5-dev thefuck fd-find htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf || true
 
 # Key
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8B48AD6246925553
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
 
 # Add unstable packages for EXA
 echo "deb http://deb.debian.org/debian unstable main" | sudo tee /etc/apt/sources.list.d/unstable.list
@@ -32,12 +30,11 @@ echo "deb http://deb.debian.org/debian unstable main" | sudo tee /etc/apt/source
 # Update package list
 sudo apt-get update
 
-# Install EXA
+# Install EXA from unstable repository
 sudo apt-get install -y -t unstable exa
 
 # Install zoxide
 curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin
-
 
 # Backup existing configuration files if they exist
 [[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
@@ -49,6 +46,8 @@ cp .p10k.zsh ~/
 
 # Source the new .zshrc file
 source ~/.zshrc
+
+fi
 
 
 elif [[ "$OSTYPE" == "darwin"* ]]; then
