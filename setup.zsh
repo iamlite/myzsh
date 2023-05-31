@@ -3,49 +3,55 @@
 # CHECK OS
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then 
 
-# Update packages
-sudo apt update && sudo apt upgrade
+  # Update packages
+  sudo apt update && sudo apt upgrade -y
 
-# Install oh-my-zsh
-RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  # Install snap if not installed
+  if ! command -v snap &> /dev/null
+  then
+    sudo apt install snapd -y
+  fi
 
-# Install Powerlevel10k
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+  # Install oh-my-zsh
+  RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-# Install zsh-syntax-highlighting plugin
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+  # Set ZSH_CUSTOM
+  ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
 
-# Install zsh-autosuggestions plugin
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+  # Install Powerlevel10k
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZSH_CUSTOM/themes/powerlevel10k
 
-# Install packages
-sudo apt-get install -y --no-install-recommends bat fzf libpcre3-dev ca-certificates sqlite3 howdoi zsh libssh2-1-dev libncurses5-dev thefuck fd-find htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf || true
+  # Install zsh-syntax-highlighting plugin
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting
 
-# Key
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8B48AD6246925553
+  # Install zsh-autosuggestions plugin
+  git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
 
-# Add unstable packages for EXA
-echo "deb http://deb.debian.org/debian unstable main" | sudo tee /etc/apt/sources.list.d/unstable.list
+  # Install packages
+  sudo apt-get install -y --no-install-recommends libpcre3-dev ca-certificates sqlite3 zsh libssh2-1-dev libncurses5-dev htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf
 
-# Update package list
-sudo apt-get updates
+  # Install packages with snap
+  sudo snap install bat fzf thefuck fd-find --classic
 
-# Install EXA from unstable repository
-sudo apt-get install -y -t unstable exa
+  # Install exa
+  curl -LSfs https://github.com/ogham/exa/releases/download/v0.10.1/exa-linux-x86_64-v0.10.1.zip -o exa.zip
+  unzip exa.zip
+  sudo mv exa-linux-x86_64 /usr/local/bin/exa
+  sudo rm exa.zip
 
-# Install zoxide
-curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin
+  # Install zoxide
+  curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin
 
-# Backup existing configuration files if they exist
-[[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
-[[ -f ~/.p10k.zsh ]] && cp ~/.p10k.zsh ~/.p10k.zsh.bak
+  # Backup existing configuration files if they exist
+  [[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
+  [[ -f ~/.p10k.zsh ]] && cp ~/.p10k.zsh ~/.p10k.zsh.bak
 
-# Copy configuration files
-cp .zshrc ~/
-cp .p10k.zsh ~/
+  # Copy configuration files
+  cp .zshrc ~/
+  cp .p10k.zsh ~/
 
-# Source the new .zshrc file
-source ~/.zshrc
+  # Source the new .zshrc file
+  source ~/.zshrc
 
 elif [[ "$OSTYPE" == "darwin"* ]]; then
 
