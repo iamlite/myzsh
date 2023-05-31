@@ -40,6 +40,11 @@ zstyle ':omz:update' mode reminder
 COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 
 # ============================== #
+#     POWERLEVEL10K CONFIG       #
+# ============================== #
+POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+
+# ============================== #
 #     PLUGIN CONFIGURATION       #
 # ============================== #
 
@@ -131,5 +136,4 @@ eval "$(zoxide init zsh)" # zoxide
 # ============================== #
 #              IDK               #
 # ============================== #
-echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >>! ~/.zshrc
 echo "LETS GO"
