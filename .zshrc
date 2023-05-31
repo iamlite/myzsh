@@ -8,6 +8,7 @@
 #                                                                                              #
 #                                                                                              #
 # ============================================================================================ #
+echo "LETS GO"
 
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -136,4 +137,3 @@ eval "$(zoxide init zsh)" # zoxide
 # ============================== #
 #              IDK               #
 # ============================== #
-echo "LETS GO"

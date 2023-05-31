@@ -28,7 +28,7 @@ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8B48AD6246925553
 echo "deb http://deb.debian.org/debian unstable main" | sudo tee /etc/apt/sources.list.d/unstable.list
 
 # Update package list
-sudo apt-get update
+sudo apt-get updates
 
 # Install EXA from unstable repository
 sudo apt-get install -y -t unstable exa
