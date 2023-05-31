@@ -47,9 +47,6 @@ cp .p10k.zsh ~/
 # Source the new .zshrc file
 source ~/.zshrc
 
-fi
-
-
 elif [[ "$OSTYPE" == "darwin"* ]]; then
 
 # Update Zsh
@@ -83,4 +80,5 @@ cp .p10k.zsh ~/
 
 # Source the new .zshrc file
 source ~/.zshrc
+
 fi
