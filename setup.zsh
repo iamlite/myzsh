@@ -21,6 +21,11 @@ git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-m
 # Install packages
 sudo apt-get install -y --no-install-recommends bat fzf libpcre3-dev ca-certificates golang libgit2-dev sqlite3 howdoi zsh libssh2-1-dev libncurses5-dev thefuck fd-find htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf || true
 
+# Key
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8B48AD6246925553
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
+
 # Add unstable packages for EXA
 echo "deb http://deb.debian.org/debian unstable main" | sudo tee /etc/apt/sources.list.d/unstable.list
 
