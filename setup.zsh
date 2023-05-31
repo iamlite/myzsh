@@ -3,6 +3,17 @@
 # CHECK OS
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then 
 
+#======================================
+#  
+#   _     ___ _   _ _   ___  __
+#  | |   |_ _| \ | | | | \ \/ /
+#  | |    | ||  \| | | | |\  / 
+#  | |___ | || |\  | |_| |/  \ 
+#  |_____|___|_| \_|\___//_/\_\
+#                              
+# 
+#======================================
+
   # Update packages
   sudo apt update && sudo apt upgrade -y
 
@@ -28,19 +39,24 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
 
   # Install packages
-  sudo apt-get install -y --no-install-recommends libpcre3-dev ca-certificates sqlite3 zsh libssh2-1-dev libncurses5-dev htop libssl-dev libreadline-dev xz-utils fonts-firacode fonts-nerd-ttf
+  sudo apt-get install -y --no-install-recommends libpcre3-dev ca-certificates sqlite3 zsh libssh2-1-dev libncurses5-dev htop libssl-dev libreadline-dev xz-utils fonts-firacode 
 
   # Install packages with snap
-  sudo snap install bat fzf thefuck fd-find --classic
+  sudo snap install bat --classic
+  sudo snap install fzf --classic
+  sudo snap install thefuck --classic
+  sudo snap install fd-find --classic
+ 
 
   # Install exa
-  curl -LSfs https://github.com/ogham/exa/releases/download/v0.10.1/exa-linux-x86_64-v0.10.1.zip -o exa.zip
+  curl -LSfs https://github.com/ogham/exa/releases/download/v0.10.1/exa-linux-armv7-v0.10.1.zip -o exa.zip
   unzip exa.zip
-  sudo mv exa-linux-x86_64 /usr/local/bin/exa
+  sudo mv exa /usr/local/bin/exa
   sudo rm exa.zip
 
   # Install zoxide
   curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin
+  export PATH=$HOME/.local/bin:$PATH
 
   # Backup existing configuration files if they exist
   [[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
@@ -52,6 +68,17 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
   # Source the new .zshrc file
   source ~/.zshrc
+
+#======================================
+# 
+#                         ___  ____  
+#   _ __ ___   __ _  ___ / _ \/ ___| 
+#  | '_ ` _ \ / _` |/ __| | | \___ \ 
+#  | | | | | | (_| | (__| |_| |___) |
+#  |_| |_| |_|\__,_|\___|\___/|____/ 
+#                                    
+# 
+#=======================================
 
 elif [[ "$OSTYPE" == "darwin"* ]]; then
 
