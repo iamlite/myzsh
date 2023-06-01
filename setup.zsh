@@ -39,7 +39,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
 
   # Install packages
-  sudo apt-get install -y --no-install-recommends zsh htop fonts-firacode bat fzf thefuck fd-find
+  sudo apt install -y --no-install-recommends zsh htop fonts-firacode bat fzf thefuck fd-find howdoi
 
   # Install exa
   curl -LSfs https://github.com/ogham/exa/releases/download/v0.10.1/exa-linux-armv7-v0.10.1.zip -o exa.zip
