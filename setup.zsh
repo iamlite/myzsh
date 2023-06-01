@@ -39,24 +39,19 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
 
   # Install packages
-  sudo apt-get install -y --no-install-recommends libpcre3-dev ca-certificates sqlite3 zsh libssh2-1-dev libncurses5-dev htop libssl-dev libreadline-dev xz-utils fonts-firacode 
-
-  # Install packages with snap
-  sudo snap install bat --classic
-  sudo snap install fzf --classic
-  sudo snap install thefuck --classic
-  sudo snap install fd-find --classic
- 
+  sudo apt-get install -y --no-install-recommends zsh htop fonts-firacode bat fzf thefuck fd-find
 
   # Install exa
   curl -LSfs https://github.com/ogham/exa/releases/download/v0.10.1/exa-linux-armv7-v0.10.1.zip -o exa.zip
   unzip exa.zip
-  sudo mv exa /usr/local/bin/exa
+  sudo mv bin/exa /usr/local/bin/exa
   sudo rm exa.zip
 
   # Install zoxide
   curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin
-  export PATH=$HOME/.local/bin:$PATH
+  echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.zshrc
+  source ~/.zshrc
+
 
   # Backup existing configuration files if they exist
   [[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
