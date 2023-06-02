@@ -96,6 +96,9 @@ else
     results+="Rust was not installed successfully.\n"
 fi
 
+#  Source cargo
+source "$HOME/.cargo/env"
+
 # Clone exa repository
 git clone https://github.com/ogham/exa.git
 if [ $? -eq 0 ]; then
