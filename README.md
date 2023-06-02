@@ -37,6 +37,10 @@ chmod +x setup.zsh
 ./setup.zsh
 ```
 
+5. reload stuff
+```
+source ~/.zshrc
+
 This will install all the necessary components and configure your Zsh environment.
 
 Please note that this setup script will overwrite your existing `.zshrc` and `.p10k.zsh` files. It will create backups of your existing files with a `.bak` extension.
