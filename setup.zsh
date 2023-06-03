@@ -183,7 +183,7 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 
 # Install brew formulae
-brew install bat fzf jump mpdecimal pcre six zoxide ca-certificates go libgit2 navi pygments sqlite zsh exa howdoi libssh2 ncurses python@3.11 thefuck fd htop mas openssl@1.1 readline xz
+brew install bat fzf jump mpdecimal pcre six zoxide ca-certificates go libgit2 navi pygments zsh exa howdoi libssh2 thefuck fd htop mas openssl@1.1 readline xz
 
 # Install brew casks
 brew install --cask font-fira-code font-hack-nerd-font
