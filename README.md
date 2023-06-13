@@ -40,6 +40,7 @@ chmod +x setup.zsh
 5. reload stuff
 ```
 source ~/.zshrc
+```
 
 This will install all the necessary components and configure your Zsh environment.
 
