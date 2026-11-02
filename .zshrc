@@ -120,9 +120,11 @@ if (( $+commands[fd] )); then
 fi
 
 # atuin: searchable shell history — initialized AFTER fzf on purpose: it takes
-# over Ctrl-R (and up-arrow) history search from fzf. Guarded like everything
-# else; machines without atuin keep the fzf bindings.
-(( $+commands[atuin] )) && eval "$(atuin init zsh)" # atuin
+# over Ctrl-R history search from fzf. --disable-up-arrow is deliberate: the
+# up arrow stays stock previous-command (Tariel's muscle memory, Nov 2, 2026);
+# Atuin lives on Ctrl-R only. Guarded like everything else; machines without
+# atuin keep the fzf bindings.
+(( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow)" # atuin
 
 # pay-respects (the maintained thefuck successor): after a botched command,
 # type `fuck` and it suggests the corrected one. The alias name is the whole
