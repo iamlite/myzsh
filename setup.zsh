@@ -9,8 +9,11 @@
 # What it does:
 #   1. Installs oh-my-zsh, the Powerlevel10k theme and the two custom plugins
 #      (only if missing)
-#   2. Installs the CLI tools the config uses, plus Starship and a Nerd Font
-#      (macOS/Homebrew; best-effort + hints on Linux)
+#   2. Installs the CLI tools the config uses (bat, eza, fzf, zoxide, fd,
+#      ripgrep, git-delta, atuin, mise, pay-respects), plus Starship and a
+#      Nerd Font (macOS/Homebrew; best-effort + hints on Linux)
+#   2b. Points git at delta as its pager (only if no pager is configured yet;
+#      ~/.gitconfig is backed up first)
 #   3. Copies .zshrc, .zprofile, .p10k.zsh and starship.toml into place
 # ============================================================================
 
@@ -92,8 +95,10 @@ fi
 
 clone_if_missing "$ZSH_CUSTOM_DIR/themes/powerlevel10k" \
   "https://github.com/romkatv/powerlevel10k.git" "Powerlevel10k theme"
-clone_if_missing "$ZSH_CUSTOM_DIR/plugins/zsh-syntax-highlighting" \
-  "https://github.com/zsh-users/zsh-syntax-highlighting.git" "zsh-syntax-highlighting"
+# fast-syntax-highlighting replaces zsh-syntax-highlighting (mutually
+# exclusive — the config enables only fast-syntax-highlighting)
+clone_if_missing "$ZSH_CUSTOM_DIR/plugins/fast-syntax-highlighting" \
+  "https://github.com/zdharma-continuum/fast-syntax-highlighting.git" "fast-syntax-highlighting"
 clone_if_missing "$ZSH_CUSTOM_DIR/plugins/zsh-autosuggestions" \
   "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
 
@@ -109,7 +114,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
     say_fail "Homebrew not found — skipping tool installs. Install it from https://brew.sh, then re-run."
   else
     # CLI tools the config integrates with (all guarded in .zshrc)
-    for pkg in bat eza fzf zoxide fd starship; do
+    for pkg in bat eza fzf zoxide fd starship ripgrep git-delta atuin mise; do
       if PATH="${BREW:h}:$PATH" command -v "$pkg" &>/dev/null; then
         say_skip "$pkg already installed"
       elif "$BREW" install "$pkg" &>/dev/null; then
@@ -118,6 +123,18 @@ if [[ "$OSTYPE" == darwin* ]]; then
         say_fail "brew install $pkg failed"
       fi
     done
+
+    # pay-respects is not in homebrew-core — it lives in the author's tap.
+    # Try core first (in case it lands there), then the tap.
+    if PATH="${BREW:h}:$PATH" command -v pay-respects &>/dev/null; then
+      say_skip "pay-respects already installed"
+    elif "$BREW" install pay-respects &>/dev/null; then
+      say_ok "installed pay-respects (brew)"
+    elif "$BREW" install timescam/homebrew-tap/pay-respects &>/dev/null; then
+      say_ok "installed pay-respects (brew, timescam tap)"
+    else
+      say_fail "brew install pay-respects failed (core and tap)"
+    fi
 
     # fzf shell integration file (~/.fzf.zsh, sourced by .zshrc when present)
     if [[ -f "$HOME/.fzf.zsh" ]]; then
@@ -145,7 +162,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
 elif [[ "$OSTYPE" == linux* ]]; then
   say_skip "Linux: skipping Homebrew steps"
   if command -v apt-get &>/dev/null && command -v sudo &>/dev/null; then
-    for pkg in zsh git curl fzf; do
+    for pkg in zsh git curl fzf ripgrep git-delta; do
       if command -v "$pkg" &>/dev/null; then
         say_skip "$pkg already installed"
       elif sudo apt-get install -y "$pkg" &>/dev/null; then
@@ -155,11 +172,69 @@ elif [[ "$OSTYPE" == linux* ]]; then
       fi
     done
   else
-    say_skip "apt-get/sudo not available — install zsh, git, curl, fzf with your package manager"
+    say_skip "apt-get/sudo not available — install zsh, git, curl, fzf, ripgrep with your package manager"
+  fi
+
+  # Tools apt doesn't carry (or carries too old): official install scripts,
+  # each guarded — skipped when the command already exists. These run before
+  # the dotfiles below are installed, so any rc edits they make are moot.
+  mkdir -p "$HOME/.local/bin"
+  if command -v starship &>/dev/null; then
+    say_skip "starship already installed"
+  elif curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin" &>/dev/null </dev/null; then
+    say_ok "installed starship (official script, ~/.local/bin)"
+  else
+    say_fail "starship install script failed"
+  fi
+  if command -v mise &>/dev/null || [[ -x "$HOME/.local/bin/mise" ]]; then
+    say_skip "mise already installed"
+  elif curl -fsSL https://mise.run | sh &>/dev/null </dev/null; then
+    say_ok "installed mise (official script, ~/.local/bin)"
+  else
+    say_fail "mise install script failed"
+  fi
+  if command -v atuin &>/dev/null; then
+    say_skip "atuin already installed"
+  elif curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh &>/dev/null </dev/null; then
+    say_ok "installed atuin (official script)"
+  else
+    say_fail "atuin install script failed"
+  fi
+  if command -v pay-respects &>/dev/null; then
+    say_skip "pay-respects already installed"
+  elif curl -sSfL https://raw.githubusercontent.com/iffse/pay-respects/main/install.sh | sh &>/dev/null </dev/null; then
+    say_ok "installed pay-respects (official script)"
+  else
+    say_fail "pay-respects install script failed"
   fi
   print -r -- "  – Linux hints: install eza, zoxide, fd and bat (bat is 'batcat' in Debian/Ubuntu)"
-  print -r -- "    via your distro or cargo; Starship via: curl -sS https://starship.rs/install.sh | sh"
-  print -r -- "    and install any Nerd Font (e.g. MesloLGS NF) for prompt glyphs."
+  print -r -- "    via your distro or cargo, and any Nerd Font (e.g. MesloLGS NF) for prompt glyphs."
+fi
+
+# ------------------------------------------------------------- git + delta
+# Use delta as git's pager — only when delta exists AND no pager is already
+# configured (never stomp an existing choice). ~/.gitconfig is backed up
+# first whenever this changes it.
+DELTA_BIN="$(command -v delta 2>/dev/null)"
+if [[ -z "$DELTA_BIN" && -n "$BREW" && -x "${BREW:h}/delta" ]]; then
+  DELTA_BIN="${BREW:h}/delta"
+fi
+if [[ -n "$DELTA_BIN" ]]; then
+  if [[ -z "$(git config --global core.pager 2>/dev/null)" ]]; then
+    backup_file "$HOME/.gitconfig"
+    if git config --global core.pager delta \
+       && git config --global interactive.diffFilter 'delta --color-only' \
+       && git config --global delta.dark true \
+       && git config --global delta.line-numbers true; then
+      say_ok "configured git: core.pager=delta (dark, line-numbers)"
+    else
+      say_fail "setting git delta config failed"
+    fi
+  else
+    say_skip "git core.pager already set — leaving git config alone"
+  fi
+else
+  say_skip "delta not installed — git pager unchanged"
 fi
 
 # nvm — the config loads it if present; installing it is a one-liner, left manual on purpose

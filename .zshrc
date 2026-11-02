@@ -77,7 +77,9 @@ COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 
 
 # list of oh-my-zsh plugins
-plugins=( git zsh-syntax-highlighting zsh-autosuggestions web-search alias-finder aliases command-not-found copypath copyfile macos )
+# fast-syntax-highlighting replaces zsh-syntax-highlighting (they're mutually
+# exclusive — never enable both) and loads last, as its docs recommend.
+plugins=( git zsh-autosuggestions web-search alias-finder aliases command-not-found copypath copyfile macos fast-syntax-highlighting )
 
 # The oh-my-zsh fzf plugin prints an error at startup when fzf is missing,
 # so it only joins the list when fzf actually exists.
@@ -106,7 +108,7 @@ PROMPT='%F{cyan}%n%f@%F{green}%m%f:%F{yellow}%~%f ${vcs_info_msg_0_}'
 
 # Initialize plugins — every hookup is guarded: if the tool is missing the
 # shell starts silently instead of printing errors.
-(( $+commands[zoxide] )) && eval "$(zoxide init zsh)" # zoxide
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)" # zoxide — plain `cd` is the smart jump now
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Use fd as fzf's file finder when it's installed (fast, respects .gitignore).
@@ -116,6 +118,16 @@ if (( $+commands[fd] )); then
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
   export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 fi
+
+# atuin: searchable shell history — initialized AFTER fzf on purpose: it takes
+# over Ctrl-R (and up-arrow) history search from fzf. Guarded like everything
+# else; machines without atuin keep the fzf bindings.
+(( $+commands[atuin] )) && eval "$(atuin init zsh)" # atuin
+
+# pay-respects (the maintained thefuck successor): after a botched command,
+# type `fuck` and it suggests the corrected one. The alias name is the whole
+# point — it's the old thefuck workflow.
+(( $+commands[pay-respects] )) && eval "$(pay-respects zsh --alias fuck)" # pay-respects
 
 # ============================== #
 #      GENERAL ALIASES           #
@@ -207,6 +219,16 @@ else
   done
   unset _nvm_home
 fi
+
+# ============================== #
+#              MISE              #
+# ============================== #
+
+# mise: one version manager for node/python/ruby/go/etc. Activated after the
+# nvm block above, so on machines that have mise its shims win and nvm stays
+# as the fallback for machines without it. Pin a machine's default node with:
+#   mise use -g node@<version>
+(( $+commands[mise] )) && eval "$(mise activate zsh)" # mise
 
 # ============================== #
 #           STARSHIP             #
