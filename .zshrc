@@ -18,6 +18,10 @@
 # ~/.zshenv (machine-local, not tracked in git).
 # If the chosen engine isn't installed, the other one takes over silently;
 # if neither is installed, the plain built-in prompt further down applies.
+# ~/.local/bin goes on PATH FIRST: on Linux, setup installs starship there,
+# and the engine check below has to see it or every Linux box silently falls
+# back to p10k (fleet rollout, Nov 2, 2026).
+[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
 PROMPT_ENGINE="${PROMPT_ENGINE:-starship}"
 if [[ "$PROMPT_ENGINE" == "starship" ]] && (( ! $+commands[starship] )); then
   PROMPT_ENGINE="p10k"
@@ -39,9 +43,6 @@ fi
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
-
-# User-local binaries (e.g. zoxide installed from its own script lands here)
-[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
 
 # Theme follows the prompt engine resolved above.
 if [[ "$PROMPT_ENGINE" == "starship" ]]; then
