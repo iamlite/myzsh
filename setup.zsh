@@ -114,7 +114,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
     say_fail "Homebrew not found — skipping tool installs. Install it from https://brew.sh, then re-run."
   else
     # CLI tools the config integrates with (all guarded in .zshrc)
-    for pkg in bat eza fzf zoxide fd starship ripgrep git-delta atuin mise; do
+    for pkg in bat eza fzf zoxide fd starship ripgrep git-delta atuin mise zstd; do
       if PATH="${BREW:h}:$PATH" command -v "$pkg" &>/dev/null; then
         say_skip "$pkg already installed"
       elif "$BREW" install "$pkg" &>/dev/null; then
@@ -124,16 +124,22 @@ if [[ "$OSTYPE" == darwin* ]]; then
       fi
     done
 
-    # pay-respects is not in homebrew-core — it lives in the author's tap.
-    # Try core first (in case it lands there), then the tap.
-    if PATH="${BREW:h}:$PATH" command -v pay-respects &>/dev/null; then
+    # pay-respects is not in homebrew-core. Routes, in order: core (in case
+    # it lands there), the author's tap, then the official install script —
+    # the script route is what actually worked on the Air (Nov 2026); it
+    # needs zstd for its .tar.zst, which the brew list above now installs.
+    # </dev/null: the script asks about its optional AI module; on EOF it
+    # keeps the modules, which is what we want.
+    if PATH="${BREW:h}:$PATH" command -v pay-respects &>/dev/null || [[ -x "$HOME/.local/bin/pay-respects" ]]; then
       say_skip "pay-respects already installed"
     elif "$BREW" install pay-respects &>/dev/null; then
       say_ok "installed pay-respects (brew)"
     elif "$BREW" install timescam/homebrew-tap/pay-respects &>/dev/null; then
       say_ok "installed pay-respects (brew, timescam tap)"
+    elif curl -sSfL https://raw.githubusercontent.com/iffse/pay-respects/main/install.sh | sh &>/dev/null </dev/null; then
+      say_ok "installed pay-respects (official install script)"
     else
-      say_fail "brew install pay-respects failed (core and tap)"
+      say_fail "pay-respects install failed (brew core, tap, and script)"
     fi
 
     # fzf shell integration file (~/.fzf.zsh, sourced by .zshrc when present)
