@@ -1,0 +1,50 @@
+# ~/.zshrc.local — machine-local zsh configuration. NOT tracked in git.
+#
+# Copy this file to ~/.zshrc.local on each machine and keep only the blocks
+# that machine needs:
+#
+#     cp zshrc.local.example ~/.zshrc.local
+#
+# ~/.zshrc sources ~/.zshrc.local last, so anything set here can override the
+# shared config. This is where API keys, tokens and machine-specific tool
+# paths belong — never in the repo (the repo is public).
+
+# --- Secrets (examples — real values live only in your ~/.zshrc.local) ---
+# export SOME_API_KEY="..."
+
+# --- Extra tool paths -------------------------------------------------------
+# Everything below is existence-guarded: if the tool isn't on this machine,
+# the entry is skipped silently instead of polluting PATH or printing errors.
+# These blocks are the Studio's current set, kept as the reference example.
+
+# Homebrew Ruby
+[[ -d /opt/homebrew/opt/ruby/bin ]] && export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
+
+# Deno
+[[ -d "$HOME/.deno/bin" ]] && export PATH="$HOME/.deno/bin:$PATH"
+
+# Flutter
+[[ -d "$HOME/flutter/bin" ]] && export PATH="$PATH:$HOME/flutter/bin"
+
+# pnpm
+export PNPM_HOME="$HOME/Library/pnpm"
+if [[ -d "$PNPM_HOME" ]]; then
+  case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+  esac
+fi
+
+# Bun
+export BUN_INSTALL="$HOME/.bun"
+[[ -d "$BUN_INSTALL/bin" ]] && export PATH="$BUN_INSTALL/bin:$PATH"
+[[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun" # bun completions
+
+# LM Studio CLI (lms)
+[[ -d "$HOME/.cache/lm-studio/bin" ]] && export PATH="$PATH:$HOME/.cache/lm-studio/bin"
+
+# Open Interpreter venv
+[[ -d "$HOME/.openinterpreter/venv/bin" ]] && export PATH="$HOME/.openinterpreter/venv/bin:$PATH"
+
+# Windsurf
+[[ -d "$HOME/.codeium/windsurf/bin" ]] && export PATH="$HOME/.codeium/windsurf/bin:$PATH"

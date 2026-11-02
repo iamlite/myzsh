@@ -1,1 +1,10 @@
 .DS_Store
+
+# Machine-local config — never commit (see zshrc.local.example)
+.zshrc.local
+.zprofile.local
+
+# Backups produced by installers / editors
+*.bak
+*.bak-*
+*.pysave

@@ -8,9 +8,28 @@
 #                                                                                              #
 #                                                                                              #
 # ============================================================================================ #
-echo "LETS GO"
 
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+# ============================== #
+#        PROMPT ENGINE           #
+# ============================== #
+
+# Which prompt engine to use: starship (default) or p10k (Powerlevel10k).
+# Flip the default here, or per machine:  export PROMPT_ENGINE=p10k  in
+# ~/.zshenv (machine-local, not tracked in git).
+# If the chosen engine isn't installed, the other one takes over silently;
+# if neither is installed, the plain built-in prompt further down applies.
+PROMPT_ENGINE="${PROMPT_ENGINE:-starship}"
+if [[ "$PROMPT_ENGINE" == "starship" ]] && (( ! $+commands[starship] )); then
+  PROMPT_ENGINE="p10k"
+elif [[ "$PROMPT_ENGINE" == "p10k" ]] && [[ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]] && (( $+commands[starship] )); then
+  PROMPT_ENGINE="starship"
+fi
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+# Only relevant when the p10k engine is active.
+if [[ "$PROMPT_ENGINE" == "p10k" ]] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
@@ -21,8 +40,20 @@ fi
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# Use powerlevel10k theme
-ZSH_THEME="powerlevel10k/powerlevel10k" # Use powerlevel10k theme
+# User-local binaries (e.g. zoxide installed from its own script lands here)
+[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
+
+# Theme follows the prompt engine resolved above.
+if [[ "$PROMPT_ENGINE" == "starship" ]]; then
+  ZSH_THEME="" # No oh-my-zsh theme — Starship provides the prompt
+elif [[ -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]]; then
+  ZSH_THEME="powerlevel10k/powerlevel10k" # Use powerlevel10k theme
+else
+  ZSH_THEME=""
+fi
+
+# Don't let Powerlevel10k nag about running its configuration wizard
+POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
 
 # ====================================== #
 # AUTOCOMPLETE AND UPDATE CONFIGURATION  #
@@ -41,35 +72,26 @@ zstyle ':omz:update' mode reminder
 COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 
 # ============================== #
-#     POWERLEVEL10K CONFIG       #
-# ============================== #
-POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-
-# ============================== #
 #     PLUGIN CONFIGURATION       #
 # ============================== #
 
-# list of oh-my-zsh plugins
-plugins=(
-  git
-  zsh-syntax-highlighting
-  zsh-autosuggestions
-  web-search
-  alias-finder
-  aliases
-  command-not-found
-  copypath
-  copyfile
-  macos
-)
 
-# source oh-my-zsh
-source $ZSH/oh-my-zsh.sh
+# list of oh-my-zsh plugins
+plugins=( git zsh-syntax-highlighting zsh-autosuggestions web-search alias-finder aliases command-not-found copypath copyfile macos )
+
+# The oh-my-zsh fzf plugin prints an error at startup when fzf is missing,
+# so it only joins the list when fzf actually exists.
+(( $+commands[fzf] )) && plugins+=( fzf )
+
+# source oh-my-zsh (only if it's actually installed)
+[[ -f "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
 
 # ============================== #
 #     PROMPT CONFIGURATION       #
 # ============================== #
 
+# Built-in fallback prompt — used only when neither prompt engine is active.
+# Both engines replace this when they load.
 autoload -Uz vcs_info
 precmd() {
     vcs_info
@@ -79,22 +101,24 @@ setopt prompt_subst
 PROMPT='%F{cyan}%n%f@%F{green}%m%f:%F{yellow}%~%f ${vcs_info_msg_0_}'
 
 # ============================== #
-#           DUMB SHIT            #
-# ============================== #
-alias bro='echo you got it bro && sudo $(fc -ln -1)' # Run last command with sudo
-alias cat='bat --paging=never --tabs=4'
-alias vim='nano'
-
-# ============================== #
-#    APP SPECIFIC ALIASES        #
+#     PLUGIN INITIALIZATION      #
 # ============================== #
 
-alias ls='exa -labh --group-directories-first --no-permissions --no-filesize --color always --sort=type' # better ls
-alias code='open -a "Visual Studio Code"' # Open VS Code from anywhere
-alias dockerps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"' # List running docker containers
+# Initialize plugins — every hookup is guarded: if the tool is missing the
+# shell starts silently instead of printing errors.
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh)" # zoxide
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Use fd as fzf's file finder when it's installed (fast, respects .gitignore).
+# Keybindings don't change — Ctrl-T / Ctrl-R / Alt-C just get a better backend.
+if (( $+commands[fd] )); then
+  export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+fi
 
 # ============================== #
-#        GENERAL ALIASES         #
+#      GENERAL ALIASES           #
 # ============================== #
 
 alias reload='source ~/.zshrc' # Reload .zshrc file
@@ -112,11 +136,46 @@ alias mv='mv -i' # Prompt before overwriting files with mv
 alias myip='curl http://ipecho.net/plain; echo' # Get public IP address
 alias myips='ipconfig getifaddr en0 && ipconfig getifaddr en1'  # Get local IP addresses
 alias pingg='ping google.com'  # Check internet connection
+alias python="python3"
+alias pip="pip3"
+alias npr="npm run"
 
 # ============================== #
-#           FUNCTIONS            #
+#    APP SPECIFIC ALIASES        #
 # ============================== #
 
+# better ls: eza (the maintained successor of exa) where available,
+# exa as a fallback, plain ls otherwise — decided by what exists.
+if (( $+commands[eza] )); then
+  alias ls='eza -labh --group-directories-first --no-permissions --no-filesize --color always --sort=type' # better ls
+  alias tree='eza --tree' # directory tree
+  alias exa='eza' # muscle-memory shim
+elif (( $+commands[exa] )); then
+  alias ls='exa -labh --group-directories-first --no-permissions --no-filesize --color always --sort=type' # better ls
+  alias tree='exa --tree' # directory tree
+fi
+alias code='open -a "Visual Studio Code"' # Open VS Code from anywhere
+alias dockerps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"' # List running docker containers
+
+# ============================== #
+#         DUMB SHIT              #
+# ============================== #
+alias bro='echo you got it bro && sudo $(fc -ln -1)' # Run last command with sudo
+(( $+commands[bat] )) && alias cat='bat --paging=never --tabs=4'
+alias vim='nano'
+
+# ============================== #
+#        P10K SOURCE             #
+# ============================== #
+
+# Powerlevel10k config — only when the p10k engine is active.
+if [[ "$PROMPT_ENGINE" == "p10k" && -f ~/.p10k.zsh ]]; then
+  source ~/.p10k.zsh
+fi
+
+# ============================== #
+#         FUNCTIONS              #
+# ============================== #
 function vnc() {
     if [[ -n "$SSH_CLIENT" ]]; then
         ip=$(echo $SSH_CLIENT | awk '{ print $1}')
@@ -127,13 +186,43 @@ function vnc() {
 }
 
 # ============================== #
-#     PLUGIN INITIALIZATION      #
+#              NODE              #
 # ============================== #
 
-# Initialize plugins
-export PATH="$HOME/.local/bin:$PATH"
-eval "$(zoxide init zsh)" # zoxide
+# nvm: load from ~/.nvm if present, otherwise from a Homebrew install.
+# Deliberately does NOT call `$(brew --prefix nvm)`: a broken brew prints
+# errors into every new shell before nvm even gets a chance to load
+# (learned the hard way, Nov 2026). Probing fixed paths is silent either way.
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  source "$NVM_DIR/nvm.sh" # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion" # This loads nvm bash_completion
+else
+  for _nvm_home in /opt/homebrew/opt/nvm /usr/local/opt/nvm; do
+    if [ -s "$_nvm_home/nvm.sh" ]; then
+      source "$_nvm_home/nvm.sh" # This loads nvm
+      [ -s "$_nvm_home/etc/bash_completion.d/nvm" ] && source "$_nvm_home/etc/bash_completion.d/nvm" # This loads nvm bash_completion
+      break
+    fi
+  done
+  unset _nvm_home
+fi
 
 # ============================== #
-#              IDK               #
+#           STARSHIP             #
 # ============================== #
+
+# Starship prompt — only when the starship engine is active.
+# Config lives in ~/.config/starship.toml (installed by setup.zsh).
+if [[ "$PROMPT_ENGINE" == "starship" ]] && (( $+commands[starship] )); then
+  export TERM="xterm-256color" # Fix TERM for Starship
+  eval "$(starship init zsh)"
+fi
+
+# ============================== #
+#      MACHINE-LOCAL CONFIG      #
+# ============================== #
+
+# Per-machine tool paths, settings and secrets live in ~/.zshrc.local.
+# It is NOT tracked in git — see zshrc.local.example in this repo.
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"

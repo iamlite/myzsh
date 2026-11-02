@@ -1,202 +1,190 @@
 #!/bin/zsh
+# ============================================================================
+# myzsh setup — idempotent installer
+#
+# Safe to re-run: existing dotfiles are backed up (timestamped) before being
+# replaced, components that are already installed are skipped, and nothing is
+# removed. Backups land in ~/.myzsh-backups/<timestamp>/.
+#
+# What it does:
+#   1. Installs oh-my-zsh, the Powerlevel10k theme and the two custom plugins
+#      (only if missing)
+#   2. Installs the CLI tools the config uses, plus Starship and a Nerd Font
+#      (macOS/Homebrew; best-effort + hints on Linux)
+#   3. Copies .zshrc, .zprofile, .p10k.zsh and starship.toml into place
+# ============================================================================
 
-# CHECK OS
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then 
+SETUP_DIR="${0:A:h}"
+typeset -a SUMMARY
+BACKUP_DIR=""
 
-#======================================
-#  
-#   _     ___ _   _ _   ___  __
-#  | |   |_ _| \ | | | | \ \/ /
-#  | |    | ||  \| | | | |\  / 
-#  | |___ | || |\  | |_| |/  \ 
-#  |_____|___|_| \_|\___//_/\_\
-#                              
-# 
-#======================================
+say_ok()   { print -r -- "  ✓ $1"; SUMMARY+=("✓ $1") }
+say_skip() { print -r -- "  – $1"; SUMMARY+=("– $1") }
+say_fail() { print -r -- "  ✗ $1"; SUMMARY+=("✗ $1") }
 
-# Initialize an empty string to store the results
-results=""
-
-# Check if curl is installed
-if ! command -v curl &> /dev/null
-then
-  echo "curl could not be found. Installing curl..."
-  sudo apt install curl -y
-  if [ $? -eq 0 ]; then
-    results+="curl was installed successfully.\n"
-  else
-    results+="curl was not installed successfully.\n"
+backup_file() {
+  local f="$1"
+  [[ -e "$f" ]] || return 0
+  if [[ -z "$BACKUP_DIR" ]]; then
+    BACKUP_DIR="$HOME/.myzsh-backups/$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$BACKUP_DIR" || return 1
   fi
+  cp "$f" "$BACKUP_DIR/" && say_ok "backed up $f → $BACKUP_DIR/"
+}
+
+install_file() {
+  local src="$1" dst="$2"
+  if [[ ! -f "$src" ]]; then
+    say_fail "source file missing: $src"
+    return
+  fi
+  mkdir -p "${dst:h}"
+  # A stale symlink gets replaced (its target is never touched)
+  if [[ -L "$dst" ]]; then
+    rm "$dst"
+    say_skip "$dst was a symlink — replaced with a real copy"
+  fi
+  if [[ -f "$dst" ]] && cmp -s "$src" "$dst"; then
+    say_skip "$dst is already up to date"
+    return
+  fi
+  backup_file "$dst"
+  if cp "$src" "$dst"; then
+    say_ok "installed $dst"
+  else
+    say_fail "could not install $dst"
+  fi
+}
+
+clone_if_missing() {
+  local dir="$1" url="$2" label="$3"
+  if [[ -d "$dir" ]]; then
+    say_skip "$label already installed"
+  elif git clone --depth=1 "$url" "$dir" &>/dev/null; then
+    say_ok "installed $label"
+  else
+    say_fail "could not clone $label ($url)"
+  fi
+}
+
+print -r -- "== myzsh setup (from $SETUP_DIR) =="
+
+# ---------------------------------------------------------------- preflight
+if ! command -v git &>/dev/null; then
+  print -r -- "git is required but was not found. Install git first, then re-run."
+  exit 1
 fi
 
-# Update packages
-sudo apt update -y && sudo apt upgrade -y
-if [ $? -eq 0 ]; then
-    results+="System update was successful.\n"
+# ------------------------------------------------------- oh-my-zsh + plugins
+ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+if [[ -d "$HOME/.oh-my-zsh" ]]; then
+  say_skip "oh-my-zsh already installed"
+elif command -v curl &>/dev/null; then
+  if RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended &>/dev/null; then
+    say_ok "installed oh-my-zsh"
+  else
+    say_fail "oh-my-zsh install failed"
+  fi
 else
-    results+="System update was not successful.\n"
+  say_fail "curl not found — cannot install oh-my-zsh"
 fi
 
-# Install build-essential for C compiler
-sudo apt install build-essential -y
-if [ $? -eq 0 ]; then
-    results+="build-essential was installed successfully.\n"
-else
-    results+="build-essential was not installed successfully.\n"
+clone_if_missing "$ZSH_CUSTOM_DIR/themes/powerlevel10k" \
+  "https://github.com/romkatv/powerlevel10k.git" "Powerlevel10k theme"
+clone_if_missing "$ZSH_CUSTOM_DIR/plugins/zsh-syntax-highlighting" \
+  "https://github.com/zsh-users/zsh-syntax-highlighting.git" "zsh-syntax-highlighting"
+clone_if_missing "$ZSH_CUSTOM_DIR/plugins/zsh-autosuggestions" \
+  "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
+
+# --------------------------------------------------------------------- tools
+if [[ "$OSTYPE" == darwin* ]]; then
+  BREW=""
+  for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    [[ -x "$b" ]] && BREW="$b" && break
+  done
+  [[ -z "$BREW" ]] && BREW="$(command -v brew 2>/dev/null)"
+
+  if [[ -z "$BREW" ]]; then
+    say_fail "Homebrew not found — skipping tool installs. Install it from https://brew.sh, then re-run."
+  else
+    # CLI tools the config integrates with (all guarded in .zshrc)
+    for pkg in bat eza fzf zoxide fd starship; do
+      if PATH="${BREW:h}:$PATH" command -v "$pkg" &>/dev/null; then
+        say_skip "$pkg already installed"
+      elif "$BREW" install "$pkg" &>/dev/null; then
+        say_ok "installed $pkg (brew)"
+      else
+        say_fail "brew install $pkg failed"
+      fi
+    done
+
+    # fzf shell integration file (~/.fzf.zsh, sourced by .zshrc when present)
+    if [[ -f "$HOME/.fzf.zsh" ]]; then
+      say_skip "~/.fzf.zsh already present"
+    elif [[ -x "$("$BREW" --prefix)/opt/fzf/install" ]]; then
+      if "$("$BREW" --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc &>/dev/null; then
+        say_ok "generated ~/.fzf.zsh"
+      else
+        say_fail "fzf integration script failed"
+      fi
+    fi
+
+    # Nerd Fonts — the prompt glyphs need one. Terminal app must be set to it.
+    for cask in font-meslo-lg-nerd-font font-hack-nerd-font; do
+      if "$BREW" list --cask "$cask" &>/dev/null; then
+        say_skip "$cask already installed"
+      elif "$BREW" install --cask "$cask" &>/dev/null; then
+        say_ok "installed $cask"
+      else
+        say_fail "brew install --cask $cask failed"
+      fi
+    done
+  fi
+
+elif [[ "$OSTYPE" == linux* ]]; then
+  say_skip "Linux: skipping Homebrew steps"
+  if command -v apt-get &>/dev/null && command -v sudo &>/dev/null; then
+    for pkg in zsh git curl fzf; do
+      if command -v "$pkg" &>/dev/null; then
+        say_skip "$pkg already installed"
+      elif sudo apt-get install -y "$pkg" &>/dev/null; then
+        say_ok "installed $pkg (apt)"
+      else
+        say_fail "apt install $pkg failed"
+      fi
+    done
+  else
+    say_skip "apt-get/sudo not available — install zsh, git, curl, fzf with your package manager"
+  fi
+  print -r -- "  – Linux hints: install eza, zoxide, fd and bat (bat is 'batcat' in Debian/Ubuntu)"
+  print -r -- "    via your distro or cargo; Starship via: curl -sS https://starship.rs/install.sh | sh"
+  print -r -- "    and install any Nerd Font (e.g. MesloLGS NF) for prompt glyphs."
 fi
 
-# Install oh-my-zsh
-RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-if [ $? -eq 0 ]; then
-    results+="oh-my-zsh was installed successfully.\n"
-else
-    results+="oh-my-zsh was not installed successfully.\n"
+# nvm — the config loads it if present; installing it is a one-liner, left manual on purpose
+if [[ ! -d "$HOME/.nvm" && ! -d /opt/homebrew/opt/nvm && ! -d /usr/local/opt/nvm ]]; then
+  print -r -- "  – nvm not found. To add it: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"
+  print -r -- "    (the shell config works fine without it — node segments just stay hidden)"
 fi
 
-# Set ZSH_CUSTOM
-ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
+# --------------------------------------------------------------------- files
+install_file "$SETUP_DIR/.zshrc"        "$HOME/.zshrc"
+install_file "$SETUP_DIR/.zprofile"     "$HOME/.zprofile"
+install_file "$SETUP_DIR/.p10k.zsh"     "$HOME/.p10k.zsh"
+install_file "$SETUP_DIR/starship.toml" "$HOME/.config/starship.toml"
 
-# Install Powerlevel10k
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZSH_CUSTOM/themes/powerlevel10k
-if [ $? -eq 0 ]; then
-    results+="Powerlevel10k was installed successfully.\n"
-else
-    results+="Powerlevel10k was not installed successfully.\n"
-fi
-
-# Install zsh-syntax-highlighting plugin
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting
-if [ $? -eq 0 ]; then
-    results+="zsh-syntax-highlighting was installed successfully.\n"
-else
-    results+="zsh-syntax-highlighting was not installed successfully.\n"
-fi
-
-# Install zsh-autosuggestions plugin
-git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
-if [ $? -eq 0 ]; then
-    results+="zsh-autosuggestions was installed successfully.\n"
-else
-    results+="zsh-autosuggestions was not installed successfully.\n"
-fi
-
-# Install packages
-sudo apt install -y --no-install-recommends zsh htop fonts-firacode bat fzf thefuck fd-find howdoi
-if [ $? -eq 0 ]; then
-    results+="Required packages were installed successfully.\n"
-else
-    results+="Required packages were not installed successfully.\n"
-fi
-
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-if [ $? -eq 0 ]; then
-    results+="Rust was installed successfully.\n"
-else
-    results+="Rust was not installed successfully.\n"
-fi
-
-#  Source cargo
-source "$HOME/.cargo/env"
-
-# Clone exa repository
-git clone https://github.com/ogham/exa.git
-if [ $? -eq 0 ]; then
-    results+="exa repository was cloned successfully.\n"
-else
-    results+="exa repository was not cloned successfully.\n"
-fi
-
-# Build exa
-cd exa
-cargo build --release
-if [ $? -eq 0 ]; then
-    results+="exa was built successfully.\n"
-else
-    results+="exa was not built successfully.\n"
-fi
-
-# Install exa
-sudo mv target/release/exa /usr/local/bin/
-if [ $? -eq 0 ]; then
-    results+="exa was installed successfully.\n"
-else
-    results+="exa was not installed successfully.\n"
-fi
-cd ..
-
-# Install zoxide
-curl -LSfs https://raw.githubusercontent.com/ajeetdsouza/zoxide/master/install.sh | sh -s -- -b $HOME/.local/bin
-echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.zshrc
-source ~/.zshrc
-if [ $? -eq 0 ]; then
-    results+="zoxide was installed successfully.\n"
-else
-    results+="zoxide was not installed successfully.\n"
-fi
-
-# Backup existing configuration files if they exist
-[[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
-[[ -f ~/.p10k.zsh ]] && cp ~/.p10k.zsh ~/.p10k.zsh.bak
-
-# Copy configuration files
-cp .zshrc ~/
-cp .p10k.zsh ~/
-
-# Source the new .zshrc file
-source ~/.zshrc
-if [ $? -eq 0 ]; then
-    results+="Configuration files were sourced successfully.\n"
-else
-    results+="Configuration files were not sourced successfully.\n"
-fi
-
-# At the end of the script, print all the results
-echo -e $results
-
-#======================================
-# 
-#                         ___  ____  
-#   _ __ ___   __ _  ___ / _ \/ ___| 
-#  | '_ ` _ \ / _` |/ __| | | \___ \ 
-#  | | | | | | (_| | (__| |_| |___) |
-#  |_| |_| |_|\__,_|\___|\___/|____/ 
-#                                    
-# 
-#=======================================
-
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-
-# Update Zsh
-brew upgrade zsh
-
-# Install oh-my-zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-
-# Install Powerlevel10k
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-
-# Install zsh-syntax-highlighting plugin
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-
-# Install zsh-autosuggestions plugin
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-
-# Install brew formulae
-brew install bat fzf jump mpdecimal pcre six zoxide ca-certificates go libgit2 navi pygments zsh exa howdoi libssh2 thefuck fd htop mas openssl@1.1 readline xz
-
-# Install brew casks
-brew install --cask font-fira-code font-hack-nerd-font
-
-# Backup existing configuration files if they exist
-[[ -f ~/.zshrc ]] && cp ~/.zshrc ~/.zshrc.bak
-[[ -f ~/.p10k.zsh ]] && cp ~/.p10k.zsh ~/.p10k.zsh.bak
-
-# Copy configuration files
-cp .zshrc ~/
-cp .p10k.zsh ~/
-
-# Source the new .zshrc file
-source ~/.zshrc
-
-fi
+# ------------------------------------------------------------------- summary
+print -r -- ""
+print -r -- "== Summary =="
+for line in "${SUMMARY[@]}"; do
+  print -r -- "  $line"
+done
+[[ -n "$BACKUP_DIR" ]] && print -r -- "  Backups: $BACKUP_DIR"
+print -r -- ""
+print -r -- "Next steps:"
+print -r -- "  1. Set your terminal font to a Nerd Font (MesloLGS NF or Hack Nerd Font)"
+print -r -- "     or the prompt glyphs will show as boxes."
+print -r -- "  2. Open a new terminal (or run: source ~/.zshrc)."
+print -r -- "  3. Per-machine extras (tool paths, API keys):"
+print -r -- "       cp \"$SETUP_DIR/zshrc.local.example\" ~/.zshrc.local"

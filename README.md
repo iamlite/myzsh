@@ -1,51 +1,108 @@
-# Lite Zshrc Setup
+# Lite Zsh Setup
 
-This repository contains my personal Zsh setup, optimized for macOS. It includes configurations for Oh My Zsh, Powerlevel10k, and several useful command-line tools, fonts, and brew packages. While this setup is primarily designed for macOS, it can be adapted for Linux with some modifications.
+My personal zsh setup for macOS (Linux works too, with a few manual steps).
+Oh My Zsh + a glyph-heavy prompt + the usual fast CLI replacements.
 
-## Features
+**Modernized November 2026.** The 2023 version had a bad habit: unguarded
+tool hookups (looking at you, `source $(brew --prefix nvm)/nvm.sh`) that
+printed errors into every new shell the moment a tool broke or went missing.
+Every integration in this config is now guarded — if a tool isn't installed
+or is broken, the shell starts silently and that feature just doesn't show.
 
-- **Oh My Zsh**: An open-source, community-driven framework for managing your Zsh configuration. It comes bundled with a ton of helpful functions, helpers, plugins, and themes.
-- **Powerlevel10k**: A fast and customizable Zsh theme with prompt that supports powerline fonts and other features for a better terminal experience.
-- **Fonts**: This setup includes the Fira Code and Hack Nerd fonts, which are particularly well-suited for coding due to their clear, distinct characters and coding ligatures.
-- **Brew Packages**: A collection of useful brew packages such as `bat`, `fzf`, `jump`, `mpdecimal`, `pcre`, `six`, `zoxide`, `ca-certificates`, `go`, `libgit2`, `navi`, `pygments`, `sqlite`, `zsh`, `exa`, `howdoi`, `libssh2`, `ncurses`, `python@3.11`, `thefuck`, `fd`, `htop`, `mas`, `openssl@1.1`, `readline`, and `xz`.
-- **Zsh Plugins**: This setup includes the `zsh-syntax-highlighting` and `zsh-autosuggestions` plugins, which provide syntax highlighting and command autosuggestions in the terminal.
+## The prompt
+
+Default engine is **Starship** (`starship.toml` in this repo): actively
+maintained, and the same config works on macOS and Linux. The look is a
+Gruvbox powerline chain — OS icon, user@host, directory, git branch/status,
+language versions, docker/conda, clock — cloned from what I already ran on
+the Studio. Everything the old Powerlevel10k setup showed is covered:
+
+| Powerlevel10k | Starship |
+| --- | --- |
+| os_icon, context | `os`, `username` + `hostname` (SSH only) |
+| dir | `directory` |
+| vcs | `git_branch` + `git_status` |
+| status, command_execution_time, background_jobs | right side: `status`, `cmd_duration`, `jobs` |
+| direnv + version-manager segments | `direnv` (right side) + language modules |
+| time | `time` |
+| transient prompt | — (no Starship equivalent) |
+
+**Powerlevel10k is kept as a fallback.** Flip one variable:
+
+```zsh
+# in .zshrc, or per machine in ~/.zshenv
+export PROMPT_ENGINE=p10k   # default: starship
+```
+
+If the selected engine isn't installed, the other one takes over silently.
+
+### Fonts (required for the glyphs)
+
+The prompt uses Nerd Font icons. `setup.zsh` installs
+**MesloLGS NF** (`font-meslo-lg-nerd-font`) and **Hack Nerd Font**
+(`font-hack-nerd-font`) via Homebrew. You still have to point your terminal
+app at one of them (Terminal.app / iTerm2 / etc. → font settings), or the
+icons show up as boxes.
+
+## Tools
+
+Integrated in `.zshrc`, all behind `command -v` guards:
+
+| Tool | Used for | Notes |
+| --- | --- | --- |
+| eza | `ls`, `tree` | Successor of the dead **exa** project; same flags. Falls back to exa, then plain `ls`. |
+| bat | `cat` | |
+| zoxide | `z` directory jumping | Replaced `jump` years ago. |
+| fzf + fd | Ctrl-T / Ctrl-R / Alt-C | fd becomes fzf's backend when present (fast, respects `.gitignore`). Keys unchanged. |
+| nvm | node versions | Loaded from `~/.nvm`, else from Homebrew's opt dir — probed by path, never via `$(brew --prefix …)`. |
+| Homebrew | `update`/`cleanup` aliases, `.zprofile` | shellenv is loaded only if a brew binary actually exists. |
+
+Dropped from the 2023 install lists: `exa` (dead → eza), `jump` (superseded
+by zoxide), `thefuck` (unmaintained), `howdoi` (dead), `openssl@1.1` (EOL).
 
 ## Installation
 
-To install this setup, follow these steps:
-
-1. Clone the repository:
-
 ```zsh
 git clone https://github.com/iamlite/myzsh
-```
-
-2. Navigate to the cloned directory:
-
-```zsh
 cd myzsh
-```
-
-3. Permissions
-```
 chmod +x setup.zsh
-```
-
-4. Run the setup script:
-
-```zsh
 ./setup.zsh
 ```
 
-5. reload stuff
-```
-source ~/.zshrc
+`setup.zsh` is idempotent — re-running it is the update mechanism
+(`git pull && ./setup.zsh`). Before it replaces any dotfile it makes a
+timestamped backup in `~/.myzsh-backups/`. It installs Oh My Zsh,
+Powerlevel10k, the syntax-highlighting/autosuggestions plugins, the CLI
+tools above, Starship, and the fonts. It does **not** install Homebrew or
+nvm for you (it prints the one-liners if they're missing).
+
+On Linux it does the same config/plugin steps, installs the basics with
+apt where possible, and prints hints for the rest.
+
+## Machine-local config: `.zshrc.local`
+
+Anything machine-specific — extra tool PATHs (deno, flutter, bun, pnpm…),
+API keys, secrets — lives in `~/.zshrc.local`, which `.zshrc` sources last
+and git ignores. Copy the annotated starting point:
+
+```zsh
+cp zshrc.local.example ~/.zshrc.local
 ```
 
-This will install all the necessary components and configure your Zsh environment.
+The example file contains the Studio's current tool-path blocks, all
+existence-guarded so stale entries stay silent.
 
-Please note that this setup script will overwrite your existing `.zshrc` and `.p10k.zsh` files. It will create backups of your existing files with a `.bak` extension.
+## Recommendations (not installed — my call, listed for future me)
+
+- **ripgrep (`rg`)** — the grep upgrade; pairs with fzf/bat, installed on neither Mac yet.
+- **pay-respects** — maintained successor to `thefuck`: run it after a botched command to get the corrected one.
+- **git-delta** — prettier git diffs/log pager (`brew install git-delta` + two lines of git config).
+- **atuin** — searchable, syncable shell history (replaces Ctrl-R search; bigger workflow change).
+- **mise** — one version manager for node/python/ruby/etc.; would retire the nvm + brew-ruby + friends sprawl.
+- **zoxide `--cmd cd`** — make plain `cd` smart instead of using `z`; one-line change in `.zshrc` if wanted.
 
 ## Customization
 
-Feel free to fork this repository and customize it to suit your needs. If you're using Linux, you may need to modify the setup script and the Zsh configuration to work with your specific distribution and environment.
+Fork it and make it yours. Prompt taste lives in `starship.toml`
+(or `.p10k.zsh` if you flip the engine); machine quirks live in
+`~/.zshrc.local`, never in the tracked files.
